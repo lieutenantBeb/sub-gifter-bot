@@ -88,7 +88,7 @@ module.exports = {
                 }
 
                 videoSearch(args.join(' '))
-                await sleep(5000)
+                await sleep(7000)
                 if (typeof songURL.url === 'undefined') return await msg.ref.edit({ content: "You didn't select in time!", components: [] })
 
 
@@ -173,9 +173,14 @@ const videoPlayer = async (song, guild, connection, message, serverQueue, msg) =
     } ;
     const stream = ytdl(song.url, { filter: 'audioonly' });
     const resource = jsVoice.createAudioResource(stream)
+
+    try{
     player.play(resource)
     await connection.subscribe(player)
-
+    }catch(err){
+        console.log(err)
+        message.channel.send('Bot broke, try again :(')
+    }
     player.on(jsVoice.AudioPlayerStatus.Idle, () => {
         serverQueue.songs.shift();
         console.log(serverQueue.songs)
@@ -187,9 +192,9 @@ const videoPlayer = async (song, guild, connection, message, serverQueue, msg) =
         }
         msg = undefined
         player.play(getNextResource(serverQueue.songs[0]))
-        message.channel.send(`Now playing ${song.title}...`);
+        message.channel.send(`Now playing ${serverQueue.songs[0].title}...`);
     });
-    message.channel.send(`Now playing ${song.title}...`);
+    message.channel.send(`Now playing ${serverQueue.songs[0].title}...`);
 }
 
 function sleep(ms) {
