@@ -10,6 +10,7 @@ const queue = new Map();
 var songURL = {};
 var msg = {};
 var timeoutStatus = {};
+var selection = {};
 
 module.exports = {
     name: 'play',
@@ -76,21 +77,25 @@ module.exports = {
                         if (!interaction.isSelectMenu()) return;
 
                         if (interaction.customId === epoch + message.member.id) {
-                            var selection = Number(interaction.values[0])
+                            selection = Number(interaction.values[0])
                             await interaction.update({ content: `Selected: ${videoResult.videos[selection].title}`, components: [] });
                             console.log(interaction.values)
                             songURL.url = videoResult.videos[selection].url
                             console.log(typeof songURL.url)
                             selection = [];
-
                         }
                     })
+
+
                 }
 
                 videoSearch(args.join(' '))
                 await sleep(7000)
-                if (typeof songURL.url === 'undefined') return await msg.ref.edit({ content: "You didn't select in time!", components: [] })
-
+                if (typeof songURL.url === 'undefined') {
+                    await msg.ref.edit({ content: "You didn't select in time!", components: [] })
+                    selection = [];
+                    return
+                }
 
                 console.log(songURL.url)
                 const songInfo = await ytdl.getInfo(songURL.url)
@@ -141,7 +146,7 @@ module.exports = {
             stopSong(message, serverQueue, serverQueue.connection);
         } else if (cmd === 'dc') {
             dcBot(message, serverQueue, serverQueue.connection)
-        } else if (cmd === 'queue' || cmd === 'q'){
+        } else if (cmd === 'queue' || cmd === 'q') {
             showQueue(message, serverQueue)
         }
     }
@@ -166,18 +171,18 @@ async function connectToChannel(channel, guild) {
 
 const videoPlayer = async (song, guild, connection, message, serverQueue, msg) => {
     console.log('Ran video player')
-    if (typeof timeoutStatus !== 'undefined'){
+    if (typeof timeoutStatus !== 'undefined') {
         console.log('Timeout Cleared')
         clearTimeout(timeoutStatus)
         timeoutStatus = {};
-    } ;
+    };
     const stream = ytdl(song.url, { filter: 'audioonly' });
     const resource = jsVoice.createAudioResource(stream)
 
-    try{
-    player.play(resource)
-    await connection.subscribe(player)
-    }catch(err){
+    try {
+        player.play(resource)
+        await connection.subscribe(player)
+    } catch (err) {
         console.log(err)
         message.channel.send('Bot broke, try again :(')
     }
@@ -187,7 +192,7 @@ const videoPlayer = async (song, guild, connection, message, serverQueue, msg) =
         if (serverQueue.songs.length == 0) {
             player.removeAllListeners(jsVoice.AudioPlayerStatus.Idle)
             message.channel.send('Queue is empty :( ')
-            timeoutStatus = setTimeout(() => {dcBot(message, serverQueue, connection)}, 600000)
+            timeoutStatus = setTimeout(() => { dcBot(message, serverQueue, connection) }, 600000)
             return
         }
         msg = undefined
@@ -223,37 +228,37 @@ const dcBot = (message, serverQueue, connection) => {
 
 const showQueue = (message, serverQueue) => {
     queueLength = serverQueue.songs.length;
-    if (queueLength < 5){
-        if (queueLength === 0 ){
+    if (queueLength < 5) {
+        if (queueLength === 0) {
             message.channel.send('No songs in Queue.')
-        }else if (queueLength === 1 ) {
+        } else if (queueLength === 1) {
             message.channel.send(`Current queue:
             ${serverQueue.songs[0].title} -- ${serverQueue.songs[0].Time}`)
-        }else if (queueLength === 2) {
+        } else if (queueLength === 2) {
             message.channel.send(`Current queue:
             ${serverQueue.songs[0].title} -- ${serverQueue.songs[0].Time}
             ${serverQueue.songs[1].title} -- ${serverQueue.songs[1].Time}`)
-        }else if (queueLength === 3){
+        } else if (queueLength === 3) {
             message.channel.send(`Current queue:
             ${serverQueue.songs[0].title} -- ${serverQueue.songs[0].Time}
             ${serverQueue.songs[1].title} -- ${serverQueue.songs[1].Time}
             ${serverQueue.songs[2].title} -- ${serverQueue.songs[2].Time}`)
-        }else if (queueLength === 4){
+        } else if (queueLength === 4) {
             message.channel.send(`Current queue:
             ${serverQueue.songs[0].title} -- ${serverQueue.songs[0].Time}
             ${serverQueue.songs[1].title} -- ${serverQueue.songs[1].Time}
             ${serverQueue.songs[2].title} -- ${serverQueue.songs[2].Time}
             ${serverQueue.songs[3].title} -- ${serverQueue.songs[3].Time}`)
         }
-    }else{
+    } else {
         message.channel.send(`Next 5 songs in queue: 
         ${serverQueue.songs[0].title} -- ${serverQueue.songs[0].Time}
         ${serverQueue.songs[1].title} -- ${serverQueue.songs[1].Time}
         ${serverQueue.songs[2].title} -- ${serverQueue.songs[2].Time}
         ${serverQueue.songs[3].title} -- ${serverQueue.songs[3].Time}
-        ${serverQueue.songs[4].title} -- ${serverQueue.songs[4].Time}`)   
+        ${serverQueue.songs[4].title} -- ${serverQueue.songs[4].Time}`)
     }
-    
+
 }
 
 const getNextResource = (song) => {
@@ -264,11 +269,11 @@ const getNextResource = (song) => {
 
 const formatSeconds = (secsString) => {
     const secs = Number(secsString)
-    var hours = Math.floor(secs/3600);
-    var minutes = Math.floor(secs/60) % 60
+    var hours = Math.floor(secs / 3600);
+    var minutes = Math.floor(secs / 60) % 60
     var seconds = secs % 60
-	var Time = (hours < 10 ? "0" + hours : hours);
-            Time += ":" + (minutes < 10 ? "0" + minutes : minutes);
-            Time += ":" + (seconds < 10 ? "0" + seconds : seconds);
-            return Time;
+    var Time = (hours < 10 ? "0" + hours : hours);
+    Time += ":" + (minutes < 10 ? "0" + minutes : minutes);
+    Time += ":" + (seconds < 10 ? "0" + seconds : seconds);
+    return Time;
 }
